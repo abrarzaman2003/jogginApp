@@ -1,4 +1,3 @@
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Input, Text, View, SafeAreaView, ScrollView, Dimensions, Button, Pressable } from 'react-native';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import { config } from './config'; // your google cloud api key
@@ -6,8 +5,10 @@ import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import React, { useState, useEffect, useRef } from "react";
 import * as Location from "expo-location";
 import MapViewDirections from 'react-native-maps-directions';
-
-
+import axios from 'axios';
+import Icon from 'react-native-vector-icons/FontAwesome';
+import { IconFill, IconOutline } from "@ant-design/icons-react-native"
+import { AntDesign } from '@expo/vector-icons'; 
 
 export default function App() {
   const apiKey = (config.apiKey);
@@ -23,13 +24,14 @@ export default function App() {
   }}
 
   const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
+  // const [errorMsg, setErrorMsg] = useState(null);
 
+  // gets current user location
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        setErrorMsg("Permission to access location was denied");
+        // setErrorMsg("Permission to access location was denied");
         setLocation(defaultLocation);
         return;
       }      
@@ -39,13 +41,16 @@ export default function App() {
       );
     })();
   }, []);
+
   const EDGE_PADDING = {
-    top: 100,
-    right: 100,
-    bottom: 100,
-    left: 100
+    top: 25,
+    right: 25,
+    bottom: 25,
+    left: 25
   }
-  const [placeObjectArray, setPlaceObjectArray] = useState([]);
+  // the main state that is used to render all of the map markers
+  const [placeObjectArray, setPlaceObjectArray] = useState([]); 
+  // this function is called whenever a user clicks on an element from the autocomplete dropdown
   const handleSubmit = (data, details) =>{
     const locationObject = {
       description: data.description,
@@ -55,14 +60,14 @@ export default function App() {
         latitude: details.geometry.location.lat,
       }
     }
-    console.log(locationObject);
-    setPlaceObjectArray([...placeObjectArray,locationObject]);
+    // console.log(locationObject);
+    setPlaceObjectArray([...placeObjectArray,locationObject]); // simply adds the location object to the state
     const options = {
       edgePadding: EDGE_PADDING,
       animated: true
     }
-    mapRef.current.fitToElements(options);
-    console.log(placeObjectArray.length);
+    mapRef.current.fitToElements(options); // also reorients the map to show all of the markers
+    // console.log(placeObjectArray.length);
   }
 
   const mapRef = useRef(null);
@@ -73,119 +78,94 @@ export default function App() {
   const [time, setTime] = useState(0.0);
   const [distance, setDistance] = useState(0.0);
  
+  const baseUrl = "http://192.168.1.194:8081";
+
   
-  
-  const resetState = () =>{
-	setTime(0.0);
-	t = 0;
-	setDistance(0.0)
+  const apiTest = async ()=>{
+    axios.get(`${baseUrl}`).then((response) => {
+      console.log(response.data);
+    });
   }
   
-  const handlePress = () =>{
-    setPathArr([]);
+  // this function is called to render routes whenever the user presses show routes
+  const handleShowPress = () =>{
+    apiTest();
+    setPathArr([]); // resets the path array in order to clear any routes on the map
     var arr = [];
+    // loop prepares a 2d array of lat long vals to request routes between all the markers
     for (var i = 1; i<placeObjectArray.length; i++){
-      //console.log(placeObjectArray[i].coordinates.latitude);
       if (i === 0){
         arr.push([{latitude: placeObjectArray[0].coordinates.latitude, longitude: placeObjectArray[0].coordinates.longitude},{latitude: placeObjectArray[1].coordinates.latitude, longitude: placeObjectArray[1].coordinates.longitude}]);
-        //console.log([[placeObjectArray[0].coordinates.latitude, placeObjectArray[0].coordinates.longitude],[placeObjectArray[1].coordinates.latitude, placeObjectArray[1].coordinates.longitude]]);
       }else{
         arr.push([{latitude: placeObjectArray[i-1].coordinates.latitude, longitude: placeObjectArray[i-1].coordinates.longitude},{latitude: placeObjectArray[i].coordinates.latitude, longitude: placeObjectArray[i].coordinates.longitude}]);
-        //console.log( arr.concat([{latitude: placeObjectArray[i-1].coordinates.latitude, longitude: placeObjectArray[i-1].coordinates.longitude},{latitude: placeObjectArray[i].coordinates.latitude, longitude: placeObjectArray[i].coordinates.longitude}]));
       }
     }
-    console.log(arr);
-    resetState();
-    var arr2 = [];
-    for (var i = 1; i<pathArr.length;i++){
-      arr2.push({
-        latitude: placeObjectArray[i].coordinates.latitude,
-        longitude: placeObjectArray[i].coordinates.longitude
-      });
-    }
-    console.log(arr2);
-	console.log(distance, time);
     
-	var t = 0.0; 
-	var d = 0.0;
-    setPathArr(arr.map((path, index)=>{console.log("index: ", index, path[0], path[1]); return (
-	<MapViewDirections key = {Math.random()}  mode= {'WALKING'} origin={path[0]} destination={path[1]} apikey={config.apiKey} onStart={(params) => {
-      console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
-    }}
-    onReady={result => {
-      console.log(`Distance: ${result.distance} km`)
-      console.log(`Duration: ${result.duration} min.`)
-      setDistance(d += result.distance);
-      setTime(t+= result.duration);
-	  t += result.duration;
-    }}
-	
-    onError={(errorMessage) => {
-      console.log('GOT AN ERROR');
-    }}></MapViewDirections>)})); // fix this fucking distance shit
-    console.log("time: ", t,"distance: ", distance);
-    // console.log(o ,d);
-    // setPathArr([<MapViewDirections apikey={config.apiKey} origin={o} destination={d} waypoints={arr2} onStart={(params) => {
-    //   console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
-    // }}
-    // onReady={result => {
-    //   console.log(`Distance: ${result.distance} km`)
-    //   console.log(`Duration: ${result.duration} min.`)
-    // }}
-    // onError={(errorMessage) => {
-    //   // console.log('GOT AN ERROR');
-    // }}></MapViewDirections>]);
-    
-    
+    var t = 0.0; 
+    var d = 0.0;
+    setPathArr(arr.map(
+      (path, index)=>{
+        console.log("index: ", index, path[0], path[1]);
+        // note: we use a random key because react won't update state unless it sees that the key has changed or if the component position in the ui tree has changed
+         return (
+                  <MapViewDirections 
+                    key = {Math.random()} 
+                    mode= {'WALKING'} 
+                    origin={path[0]} 
+                    destination={path[1]} 
+                    apikey={config.apiKey} 
+                    onStart={(params) => {
+                      console.log(`Started routing between "${params.origin}" and "${params.destination}"`);
+                    }}
+                    onReady={result => {
+                      console.log(`Distance: ${result.distance} km`)
+                      console.log(`Duration: ${result.duration} min.`)
+                      setDistance(d += result.distance);
+                      setTime(t+= result.duration);
+                    t += result.duration;
+                    }}
+                    onError={(errorMessage) => {
+                      console.log('GOT AN ERROR', errorMessage);
+                    }}
+                    strokeWidth={3}
+                    strokeColor="#559CAD"
+                  ></MapViewDirections>)
+        }));
   }
-  const onPressFunction = (index) =>{
-    console.log("pressed");
-    console.log("index: " , index);
+  // this function deletes a specified marker from the map
+  const onDeletePress = (index) =>{
     var arr2 = placeObjectArray;
     if (arr2.length > 1){
-      console.log("whi")
       arr2.splice(index,1);
     }else{
-      console.log("hi")
+      // js can't remove the last element from arrays...
       arr2 = [];
     }
-    
-
-    
-    //delete arr[index];
-    console.log(arr2, "\n\n\n");
     setPlaceObjectArray([...arr2]);
     const options = {
       edgePadding: EDGE_PADDING,
       animated: true
     }
+    // makes sure to readjust the map to fit to remaining markers
     mapRef.current.fitToElements(options);
-  }
-
+  }  
   
   return (
     <SafeAreaView style={{backgroundColor:"#FFBC42", flex:1}}> 
       <View style={{ 
-        
         justifyContent: "center",
         alignItems: "center",
-		width: "100%",
-        }}>
+		    width: "100%",
+      }}>
         <ScrollView horizontal={false} nestedScrollEnabled={true} style={{
-           width: "100%" 
-           }} keyboardShouldPersistTaps='always'>
-          <View style={{
-            width: "100%",
-            
-          }}>
+          width: "100%" 
+        }} keyboardShouldPersistTaps='always'>
+          <View style={{width: "100%",}}>
             <ScrollView centerContent={true}  horizontal={true} style={{ 
-					width: '100%',
-					
-					
-                	
-				}} keyboardShouldPersistTaps='always'> 
+					    width: '100%',    	
+				    }} keyboardShouldPersistTaps='always'> 
               <GooglePlacesAutocomplete
-                  placeholder="Type a place"
+                  placeholder="Where would you like to jog to?"
                   onPress={(data, details = null) => handleSubmit(data,details)}
                   query={{key: apiKey}}
                   fetchDetails={true}
@@ -197,15 +177,13 @@ export default function App() {
                       <Text> No results were found </Text>
                     </View>
                   )}
-				  textInputProps={{
-					InputComp: Input,
-					leftIcon: { type: 'font-awesome', name: 'chevron-left' },
-					errorStyle: { color: 'red' },
-				  }}
-			
+                  textInputProps={{
+                  InputComp: Input,
+                  leftIcon: { type: 'font-awesome', name: 'chevron-left' },
+                  errorStyle: { color: 'red' },
+                  }}			
                   styles={{
                     textInputContainer: {
-                      
                       width: "100%",
                       alignContent: 'center',
                       padding: 2,
@@ -218,31 +196,25 @@ export default function App() {
                       color: '#5d5d5d',
                       fontSize: 16,
                     },
-                    container:{
-                      
+                    container:{    
                       width:375,
-                    }
-                    
+                    }                    
                   }}
                 />
             </ScrollView>
           </View>
-        </ScrollView>
-        
+        </ScrollView>        
       </View >
-	  <View style={{ 
-        
-        justifyContent: "center",
-        alignItems: "center",
-		width: "100%",
-
-        }}>
-        {location !== null ? 
+	  <View style={{         
+      justifyContent: "center",
+      alignItems: "center",
+      width: "100%",
+    }}>
+      {location !== null ? // makes sure the map doesn't render until it gets user location
         (<MapView  
           ref={mapRef}
           provider={PROVIDER_GOOGLE} 
           style={styles.map}
-		  
           initialRegion = {
             {
               latitude: location.coords.latitude,
@@ -251,173 +223,45 @@ export default function App() {
               longitudeDelta: longitudeDelta,
             }
           }
-          
         >
           {placeObjectArray.map((placeObject, index)=> (<Marker key={index} description={placeObject.description} title={placeObject.title} coordinate={placeObject.coordinates}></Marker>))}
-          
-
           {pathArr}          
-          {/* {markerArray} */}
         </MapView>) : null}
 		</View>
-        <Pressable onPress={handlePress} style={{
-			alignItems: 'center',
-			justifyContent: 'center',
-			paddingVertical: 10,
-			paddingHorizontal: 10,
-			marginHorizontal: 40,
-			borderRadius: 16,
-			elevation: 3,
-			backgroundColor: '#4A5899',
-			borderBottomWidth: 3,
-			borderRightWidth: 4,
-			borderRadius: 16,
-			borderColor: "#559CAD",
-			shadowColor: '#171717',
-			shadowOffset: {width: 2, height: 3},
-			shadowOpacity: 0.4,
-			shadowRadius: 2,
-		}}>
-			<Text style={{
-				 fontSize: 16,
-				 lineHeight: 21,
-				 fontWeight: 'bold',
-				 letterSpacing: 0.25,
-				 color: 'white',
-			}}>
+    <Pressable onPress={handleShowPress} style={styles.showRoutesPressable}>
+      <Text style={styles.placesPressableText}>
 				Show Routes
 			</Text>
 		</Pressable>
-         
-        <Text style={{fontSize: 18,
-				margin: 5,
-				padding: 5,
-				lineHeight: 21,
-				fontWeight: 'bold',
-				letterSpacing: 0.25,
-				color: 'white',}}> 
-				Time Required: {Math.round(time)} minutes
-				{/* Time Required: {time} */}
-			 </Text>
-			 <Text style={{fontSize: 18,
-				margin: 5,
-				padding: 5,
-				lineHeight: 21,
-				fontWeight: 'bold',
-				letterSpacing: 0.25,
-				color: 'white',}}> 
-				Jogged: {distance*0.621371} miles
-			 </Text>
-        <ScrollView  style={{
+    <Text style={styles.placesPressableText}> 
+    Time Required: {Math.round(time)} minutes
+    {/* Time Required: {time} */}
+    </Text>
+    <Text style={styles.placesPressableText}> 
+    Jogged: {Math.round((distance*0.621371) * 100)/100} miles
+    </Text>
+    <ScrollView  style={{
 			width: "100%",
 			height: "45%",
-			
-			
 		}}>
-          {placeObjectArray.map((placeObject,index)=>(
+      {placeObjectArray.map(
+        (placeObject,index)=>(
           <View key={index} style={{padding:10}}>
-            <Pressable onLongPress={() => (onPressFunction(index))} style={{
-				borderColor: "#FFA782",
-				borderBottomWidth: 3,
-				borderRightWidth: 4,
-				borderRadius: 16,
-				backgroundColor: "#EF5B5B",
-				shadowColor: '#171717',
-				shadowOffset: {width: 2, height: 3},
-				shadowOpacity: 0.4,
-				shadowRadius: 2,
-
-			}}>
-              <Text style={{
-				fontSize: 18,
-				margin: 5,
-				padding: 5,
-				lineHeight: 21,
-				fontWeight: 'bold',
-				letterSpacing: 0.25,
-				color: 'white',
-			  }}>{placeObject.description}</Text>
-
-            </Pressable>
+            <View onLongPress={() => (onDeletePress(index))} style={styles.placesPressable}>
+              <Text style={{...styles.placesPressableText, width:"80%"}}>{placeObject.description}</Text>
+              <AntDesign name="delete" size={20} color="white" onPress={onDeletePress} />
+            </View>
           </View>
-          
           ))}
-        </ScrollView>
-        
-        
-    </SafeAreaView>
+    </ScrollView>      
+  </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  app: {
-    flex: 2, // the number of columns you want to devide the screen into
-    marginHorizontal: 10,
-    width: 400,
-    height: 800,
-  },
-  row: {
-    height: 200,
-    flexDirection: "row",
-    
-  },
-  pic: {
-    marginHorizontal: 17,
-    height: 100,
-    width: 100,
-    resizeMode: "contain",
-  },
   text: {
     textAlign: "center",
     borderWidth: 1,
-  },
-  "2col": {
-    backgroundColor: "white",
-    borderColor: "#fff",
-    borderWidth: 5,
-    flex: 2,
-    borderRadius: 16,
-    marginHorizontal: 7,
-    marginTop: 22,
-    height: "90%",
-    padding: 20,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 3,
-    elevation: 9,
-    
-  },
-  gridHeader: {
-    fontSize: 24,
-    fontFamily: "GillSans-BoldItalic",
-    marginTop: 10,
-    color: "#093D59",
-  },
-
-  cardContainer: {
-    backgroundColor: "#093D59",
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height - 500,
-    alignItems: "center",
-    justifyContent: "start",
-    shadowColor: "#000",
-    shadowOffset: {
-      height: 3,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 9,
-  },
-  container: {
-    backgroundColor: "#fff",
-    width: Dimensions.get("window").width,
-    height: Dimensions.get("window").height,
-    alignItems: "center",
-    justifyContent: "start",
-    
   },
   map: {
     width: Dimensions.get("window").width - 40,
@@ -428,12 +272,56 @@ const styles = StyleSheet.create({
       width: 5,
       height: 5,
     },
-	borderColor: "#FFA782",
-	borderBottomWidth: 3,
-	borderRightWidth: 4,
-	borderRadius: 16,
+    borderColor: "#FFA782",
+    borderBottomWidth: 3,
+    borderRightWidth: 4,
+    borderRadius: 16,
     shadowOpacity: 1,
     shadowRadius: 5,
     elevation: 9,
   },
+  placesPressable :{
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    borderColor: "#FFA782",
+    borderBottomWidth: 3,
+    borderRightWidth: 4,
+    borderRadius: 16,
+    backgroundColor: "#EF5B5B",
+    shadowColor: '#171717',
+    shadowOffset: {width: 2, height: 3},
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+  },
+  placesPressableText: {
+    fontSize: 14,
+    margin: 5,
+    padding: 5,
+    lineHeight: 21,
+    fontWeight: 'bold',
+    letterSpacing: 0.25,
+    color: 'white',
+  },
+  showRoutesPressable: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    marginHorizontal: 40,
+    borderRadius: 16,
+    elevation: 3,
+    backgroundColor: '#4A5899',
+    borderBottomWidth: 3,
+    borderRightWidth: 4,
+    borderRadius: 16,
+    borderColor: "#559CAD",
+    shadowColor: '#171717',
+    shadowOffset: {width: 2, height: 3},
+    shadowOpacity: 0.4,
+    shadowRadius: 2,
+  }
+
+  
 });
