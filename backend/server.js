@@ -20,6 +20,20 @@ app.get('/', function (req, res) {
 app.get("/api", (req, res) => {
     res.json({ message: "Hello from server!" });
 });
+
+// called during the initialization of the history page
+app.get("/api/getRoutes", (req,res)=>{
+    // call firebase
+    // return the shit
+})
+app.get("/api/getPlaceObjects", (req,res)=>{
+    // call firebase
+    // return the shit
+})
+app.post("/api/addRoute", (req,res)=>{
+    // call firebase
+    // return the shit
+})
   
 
 var server = app.listen(8081, function () {
@@ -30,3 +44,5 @@ var server = app.listen(8081, function () {
    
    console.log("Example app listening at http://%s:%s", host, port)
 })
+
+//
