@@ -1,4 +1,4 @@
-import { StyleSheet, Input, Text, View, SafeAreaView, ScrollView, Dimensions, Button, Pressable } from 'react-native';
+import { StyleSheet, Input, Text, View, SafeAreaView, ScrollView, Alert, Dimensions, Button, Pressable } from 'react-native';
 import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
 import { config } from '../config'; // your google cloud api key
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
@@ -9,8 +9,13 @@ import axios from 'axios';
 import Icon from 'react-native-vector-icons/FontAwesome';
 // import { IconFill, IconOutline } from "@ant-design/icons-react-native"
 import { AntDesign } from '@expo/vector-icons'; 
+import uuid from 'react-native-uuid';
+import moment from 'moment';
+import { styles } from '../Styles/StyleSheet';
 
-export default function MainPage({navigation}) {
+export default function MainPage({route, navigation}) {
+  // console.log("route params:", route.params.placeObjectArray);
+  
   const apiKey = (config.apiKey);
 
   const longitudeDelta = 0.01;
@@ -36,9 +41,12 @@ export default function MainPage({navigation}) {
         return;
       }      
       Location.getCurrentPositionAsync()
-      .then((l)=>
-        setLocation(l)
+      .then((l)=>{
+        setLocation(l);
+      }
+        
       );
+     
     })();
   }, []);
 
@@ -49,8 +57,27 @@ export default function MainPage({navigation}) {
     left: 45
   }
   const comp = useRef();
+  const routeArray = route.params.placeObjectArray;
   // the main state that is used to render all of the map markers
   const [placeObjectArray, setPlaceObjectArray] = useState([]); 
+  useEffect(()=>{
+    if (routeArray.length > 0){
+        setPathArr([]);
+        setPlaceObjectArray(routeArray);
+        if (placeObjectArray.length>0){
+            handleShowPress();
+        }
+        
+        
+        //handleShowPress();
+    }
+    
+  },[routeArray,route,navigation]);
+  useEffect(()=>{
+    if (placeObjectArray.length>0){
+        handleShowPress();
+    }
+  },[placeObjectArray])
   // this function is called whenever a user clicks on an element from the autocomplete dropdown
   const handleSubmit = (data, details) =>{
     comp.current.setAddressText("");
@@ -84,15 +111,13 @@ export default function MainPage({navigation}) {
   const baseUrl = "http://192.168.1.194:8081";
 
   
-  const apiTest = async ()=>{
-    axios.get(`${baseUrl}`).then((response) => {
-      console.log(response.data);
-    });
-  }
+  
   
   // this function is called to render routes whenever the user presses show routes
   const handleShowPress = () =>{
-    // apiTest();
+    console.log("handling show press", placeObjectArray.length);
+    // const jsonObj = (JSON.stringify(placeObjectArray));
+    // apiTest(placeObjectArray);
     setPathArr([]); // resets the path array in order to clear any routes on the map
     var arr = [];
     // loop prepares a 2d array of lat long vals to request routes between all the markers
@@ -134,11 +159,21 @@ export default function MainPage({navigation}) {
                     strokeColor="#559CAD"
                   ></MapViewDirections>)
         }));
+        const options = {
+            edgePadding: EDGE_PADDING,
+            animated: true
+          }
+          mapRef.current.fitToElements(options);
   }
   // this function deletes a specified marker from the map
   const onDeletePress = (index) =>{
+
     setPathArr([]);
     var arr2 = placeObjectArray;
+    if (arr2.length<3){
+        setDistance(0);
+        setTime(0);
+    }
     if (arr2.length > 1){
       arr2.splice(index,1);
     }else{
@@ -153,16 +188,90 @@ export default function MainPage({navigation}) {
     // makes sure to readjust the map to fit to remaining markers
     mapRef.current.fitToElements(options);
   }  
+  const saveRouteAPI = async (objArray)=>{
+    var date = moment()
+      .utcOffset('-06:00')
+      .format('YYYY-MM-DD hh:mm:ss-a');
+    const o = {
+        id : date,
+        totalDuration: time,
+        totalDistance: distance,
+        object : objArray
+    }
+    console.log("function called", o);
+    axios.post(`${baseUrl}/api/addRoute` , o ).then((response) => {
+      console.log(response.data);
+    });
+  }
+
+  const saveRoute = () =>{
+    saveRouteAPI(placeObjectArray);
+    Alert.alert('Alert Title', 'My Alert Msg', [
+        {text: 'OK', onPress: () => console.log('OK Pressed')},
+      ])
+  }
+
+  const fetch = () =>{
+    axios.get(`${baseUrl}/api/getAllRoutes`).then((response) => {
+        console.log(response.data);
+    })
+  }
+  /*
+  Object {
+    "city": "Irving",
+    "country": "United States",
+    "district": "Valley Ranch",
+    "isoCountryCode": "US",
+    "name": "8916 Fox Hollow Trail",
+    "postalCode": "75063",
+    "region": "TX",
+    "street": "Fox Hollow Trail",
+    "streetNumber": "8916",
+    "subregion": "Dallas County",
+    "timezone": "America/Chicago",
+  },
+  */
+  const addCurrentLocation = () =>{
+    if (location !== null){
+        Location.reverseGeocodeAsync({
+            latitude: location?.coords.latitude,
+            longitude: location?.coords.longitude,
+        }).then((r)=>{
+            console.log(r[0]);
+            var locationObject = {
+                description: r[0].name +", " + r[0].city +", "+r[0].region,
+                title: r[0].name,
+                coordinates: {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                }
+              }
+            setPlaceObjectArray([...placeObjectArray,locationObject]); // simply adds the location object to the state
+            const options = {
+              edgePadding: EDGE_PADDING,
+              animated: true
+            }
+            mapRef.current.fitToElements(options); 
+    
+        });
+        
+    }
+    
+    
+  }
   
   return (
-    <SafeAreaView style={{backgroundColor:"#FFBC42", flex:1}}> 
+    <SafeAreaView style={{backgroundColor:"#FFBC42", flex:1, alignItems:"center"}}> 
       <View style={{ 
         justifyContent: "center",
         alignItems: "center",
-		    width: "100%",
+		width: "95%",
+        display: "flex",
+        flexDirection: "row",
+        justifyContent:"space-around",
       }}>
         <ScrollView horizontal={false} nestedScrollEnabled={true} style={{
-          width: "100%" 
+          width: "100%", 
         }} keyboardShouldPersistTaps='always'>
           <View style={{width: "100%",}}>
             <ScrollView centerContent={true}  horizontal={true} style={{ 
@@ -206,15 +315,31 @@ export default function MainPage({navigation}) {
                     }                    
                   }}
                 />
+                
             </ScrollView>
           </View>
+          
         </ScrollView>        
       </View >
 	  <View style={{         
       justifyContent: "center",
       alignItems: "center",
+      //alignContent:"center",
       width: "100%",
     }}>
+        <View style={{display:"flex", flexDirection:"row",justifyContent:"space-evenly", width:"95%", alignSelf:"center"}}>
+        <View style={styles.historyPressableStyle}>
+            <Text style={styles.placesPressableText}> 
+            Time: {Math.round(time)} minutes
+            {/* Time Required: {time} */}
+            </Text>
+            </View>
+            <View style={styles.historyPressableStyle}>
+            <Text style={styles.placesPressableText}> 
+            Jogged: {Math.round((distance*0.621371) * 100)/100} miles
+            </Text>
+            </View>
+        </View>
       {location !== null ? // makes sure the map doesn't render until it gets user location
         (<MapView  
           ref={mapRef}
@@ -229,29 +354,27 @@ export default function MainPage({navigation}) {
             }
           }
         >
-          {placeObjectArray.map((placeObject, index)=> (<Marker key={index} description={placeObject.description} title={placeObject.title} coordinate={placeObject.coordinates}></Marker>))}
-          {pathArr}          
+          { placeObjectArray.map((placeObject)=> (<Marker key={Math.random()} description={placeObject.description} title={placeObject.title} coordinate={placeObject.coordinates}></Marker>))}
+          { pathArr }          
         </MapView>) : null}
 		</View>
-    <View>
-    <Pressable onPress={handleShowPress} style={styles.showRoutesPressable}>
-        <Text style={styles.placesPressableText}>
-				Show Routes
-	    </Text>
-	</Pressable>
-    <Pressable onPress={()=>{navigation.push('HistoryPage')}} style={styles.showRoutesPressable}>
+    <View style={{display:"flex", flexDirection:"row", justifyContent:"space-around"}}>
+    {/* navigation.push('HistoryPage') */}
+    <Pressable onPress={()=>navigation.push('HistoryPage') } style={styles.showRoutesPressable}>
         <Text style={styles.placesPressableText}>
 				Show History
 	    </Text>
 	</Pressable>
+    <Pressable onPress={()=>{saveRoute()}} style={styles.showRoutesPressable}>
+        <Text style={styles.placesPressableText}>
+				Save Route
+	    </Text>
+	</Pressable>
+    <Pressable style={styles.showRoutesPressable} onPress={()=>addCurrentLocation()}>
+        <AntDesign  name="flag" size={20} color="white" />
+    </Pressable>
     </View>
-    <Text style={styles.placesPressableText}> 
-    Time Required: {Math.round(time)} minutes
-    {/* Time Required: {time} */}
-    </Text>
-    <Text style={styles.placesPressableText}> 
-    Jogged: {Math.round((distance*0.621371) * 100)/100} miles
-    </Text>
+    
     <ScrollView  style={{
 			width: "100%",
 			height: "45%",
@@ -270,70 +393,4 @@ export default function MainPage({navigation}) {
   );
 }
 
-const styles = StyleSheet.create({
-  text: {
-    textAlign: "center",
-    borderWidth: 1,
-  },
-  map: {
-    width: Dimensions.get("window").width - 40,
-    height: Dimensions.get("window").height / 2 - 80,
-    borderRadius: 16,
-    margin: 10,
-    shadowOffset: {
-      width: 5,
-      height: 5,
-    },
-    borderColor: "#FFA782",
-    borderBottomWidth: 3,
-    borderRightWidth: 4,
-    borderRadius: 16,
-    shadowOpacity: 1,
-    shadowRadius: 5,
-    elevation: 9,
-  },
-  placesPressable :{
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    borderColor: "#FFA782",
-    borderBottomWidth: 3,
-    borderRightWidth: 4,
-    borderRadius: 16,
-    backgroundColor: "#EF5B5B",
-    shadowColor: '#171717',
-    shadowOffset: {width: 2, height: 3},
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
-  },
-  placesPressableText: {
-    fontSize: 14,
-    margin: 5,
-    padding: 5,
-    lineHeight: 21,
-    fontWeight: 'bold',
-    letterSpacing: 0.25,
-    color: 'white',
-  },
-  showRoutesPressable: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    marginHorizontal: 40,
-    borderRadius: 16,
-    elevation: 3,
-    backgroundColor: '#4A5899',
-    borderBottomWidth: 3,
-    borderRightWidth: 4,
-    borderRadius: 16,
-    borderColor: "#559CAD",
-    shadowColor: '#171717',
-    shadowOffset: {width: 2, height: 3},
-    shadowOpacity: 0.4,
-    shadowRadius: 2,
-  }
 
-  
-});

@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "joggingapp-377521",
+  "private_key_id": "d6ee155166e9bbd3340aa8fb744bc601da9a2d0d",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCdcim6ljJggsWR\nFZ4zAZn+B5YPcrSDaDr8FD6XCng4tO6WHV7OZxEcWPNhBNyYOXNC4aGbWRLoaYAC\ni6KFGzbzPHy/bGZE/f03/tO/85qqaypolITgezxh/sy77xHtxml33EpZaGLPxsUA\ntlaJuTuoAcoBvo10X4xkfpPtaRYGZjp7ZmajWIjw00OtmTj1eF7wz/iM4tO+J9n0\nT7pOKj8mbuzZnoe8M4ahN2Z6xvRD010675p4IVgISqdxsQ9kEgjXzslhqrvodnpN\nx9PtenTyLEvNN5nnHCf3y5AtvOWLEkfMHTtWSkW5Cpu9xAsrgGbwdjqWfdMKxwxu\n6AOLBu2vAgMBAAECggEAAcovcUCN2A0Eg+6z+q50+q9JZGmQZcIEkaMFRyBGV5au\n86Pn1P7U8faM5bhxbYWRqtv3w1VS4rN4Ug8WTN8PU9qHLIHl87jTbRSHgbIaOv+2\n3rN5gzfDavXDjAter85Gmqc1bSjDnssKqERqXWxuoi1LB5QL9Zu0c9wAgH1mU7JH\nOHDKCDyI6WFsC97RdUnPkFHy2raLqo3picjLP2foXcIF4R/5i2oEGsQ0vcXO6aOe\nmFIPTPAjFVXoqo7gSV4iGvfbTxNwp9eBMOF4O+QMoOR95FkAbuYa2wL1C6HPQWGu\nLaEdNyXZgDlhvCJ0X2G08dWIMZCB0pbvCqXodwQl0QKBgQDcJGpVYJ/2c/ZjFVCo\n3yrMZ9WMeo/Z8UddaXtGTxVMs+I+90pwqRe2fQnbgocV8X1eh8BEJE1EQm9Xw3c0\nGlNVJVyeQviG3knoay3f1jWXsC7EiLqvugtDP2vp5hD2F/fXSak1gE8bVKZbRYtn\nfOs3QWsSbzytdonHFa19oma6pwKBgQC3F2ktbdKjAsL1dJfTvpYgwCApLl0nd82O\nK+AgFV0vuju1ZJy1WgvT/vWzhlIwS0fTbIRXs+SQWJY9/sqTYwdjQRAj7UzuKAOq\n1lj4Fyvx5Sul5773RJdVu4fVf2N4JXdeiOGxNtxcMTtf59WAWE5JnQLmfOtzjGtx\neePkFnX9uQKBgQCREGYJkLyYON4ZeMhIH5ciTyIHihQU98uhIIsdT6uneboS5/3j\ns2lu1YKTZbYCnbmRez8VKB7KZkTcvm9kpBxZtV8M4vDGXuCxCT+Xip6SMIUA+WCb\nv6sAS2CfJv3yTOUCtwWLvdtjFSryZidwsH6HUNJvuWFwpPYxfHVwnn23bQKBgQCp\nNOqQAHn1Cr1QiPMzzmQCWmyegmm26wI+TRAxtmzLigpaZmRpOZHK10sNIardVQVJ\nQHXCc89dE3GuU8W1loSiVuPqwAkj5DkXbkcE6K1FPa0sA1O6Q1q08b3kMnmj9MQv\nysMBuxjF3v3ncWMf3PxlDcU7a+FRhUlasvJIvfVHiQKBgQDbd5VR1RddBfF7RGgZ\nQxeUDvfg7b0hRffU7UUh5drAdyuwe+idrP54p4nUbai51RfLelgd2tmV2SnNfkTH\nliQsHBl2LNt2EZuyAZwUzDlI1DSRAnKjW9geNYuZB3yX5D3r+1Rvs/z9f3gmdmog\nlkE5vyEffOFFkEsBtYufL7uPmA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-nhgt7@joggingapp-377521.iam.gserviceaccount.com",
+  "client_id": "108986540194209334812",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-nhgt7%40joggingapp-377521.iam.gserviceaccount.com"
+}
