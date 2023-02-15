@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { styles } from '../Styles/StyleSheet';
 
 export default function HistoryPage( {navigation }){
-    const baseUrl = "http://192.168.1.194:8081";
+    const baseUrl = "http://10.176.199.107:8081";
     const getRoutes = async () =>{
         axios.get(`${baseUrl}/api/getAllRoutes`).then((response) => {
             // console.log(response.data);

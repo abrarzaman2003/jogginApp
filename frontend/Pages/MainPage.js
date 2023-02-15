@@ -1,25 +1,35 @@
-import { StyleSheet, Input, Text, View, SafeAreaView, ScrollView, Alert, Dimensions, Button, Pressable } from 'react-native';
-import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
-import { config } from '../config'; // your google cloud api key
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+// imports for react native
+import { Input, Text, View, SafeAreaView, ScrollView, Alert, Pressable } from 'react-native';
 import React, { useState, useEffect, useRef } from "react";
+
+// imports for all the google apis
+import {GooglePlacesAutocomplete} from 'react-native-google-places-autocomplete';
+import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import MapViewDirections from 'react-native-maps-directions';
+
+// google cloud api key
+import { config } from '../config'; 
+
+
+
+// back end requests
 import axios from 'axios';
-import Icon from 'react-native-vector-icons/FontAwesome';
-// import { IconFill, IconOutline } from "@ant-design/icons-react-native"
+
 import { AntDesign } from '@expo/vector-icons'; 
-import uuid from 'react-native-uuid';
+
+// used for time
 import moment from 'moment';
+
+// all the styles
 import { styles } from '../Styles/StyleSheet';
 
 export default function MainPage({route, navigation}) {
-  // console.log("route params:", route.params.placeObjectArray);
-  
   const apiKey = (config.apiKey);
 
   const longitudeDelta = 0.01;
   const latitudeDelta = 0.01;
+
   // a default position in case the user doesn't want to share their location
   const defaultLocation = {coords:{
     latitude: 32.98,
@@ -28,15 +38,21 @@ export default function MainPage({route, navigation}) {
     longitudeDelta: 0.01,
   }}
 
+  const resizeMap = () =>{
+    const options = {
+        edgePadding: EDGE_PADDING,
+        animated: true
+    }
+    mapRef.current.fitToElements(options);
+  }
+
   const [location, setLocation] = useState(null);
-  // const [errorMsg, setErrorMsg] = useState(null);
 
   // gets current user location
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        // setErrorMsg("Permission to access location was denied");
         setLocation(defaultLocation);
         return;
       }      
@@ -44,9 +60,7 @@ export default function MainPage({route, navigation}) {
       .then((l)=>{
         setLocation(l);
       }
-        
       );
-     
     })();
   }, []);
 
@@ -56,28 +70,35 @@ export default function MainPage({route, navigation}) {
     bottom: 45,
     left: 45
   }
+
   const comp = useRef();
   const routeArray = route.params.placeObjectArray;
   // the main state that is used to render all of the map markers
   const [placeObjectArray, setPlaceObjectArray] = useState([]); 
   useEffect(()=>{
+    // used from navigation, gets and sets the place object array to view history
     if (routeArray.length > 0){
         setPathArr([]);
         setPlaceObjectArray(routeArray);
         if (placeObjectArray.length>0){
             handleShowPress();
         }
-        
-        
-        //handleShowPress();
+    }else{
+        setPlaceObjectArray([]);
+        setPathArr([]);
+        setDistance(0);
+        setTime(0);
     }
     
   },[routeArray,route,navigation]);
+
+  // updates routes whenevert the place object array gets updated
   useEffect(()=>{
     if (placeObjectArray.length>0){
         handleShowPress();
     }
   },[placeObjectArray])
+
   // this function is called whenever a user clicks on an element from the autocomplete dropdown
   const handleSubmit = (data, details) =>{
     comp.current.setAddressText("");
@@ -89,15 +110,11 @@ export default function MainPage({route, navigation}) {
         longitude: details.geometry.location.lng,
       }
     }
-    // console.log(locationObject);
-    // console.log([...placeObjectArray,locationObject]);
+
     setPlaceObjectArray([...placeObjectArray,locationObject]); // simply adds the location object to the state
-    const options = {
-      edgePadding: EDGE_PADDING,
-      animated: true
-    }
-    mapRef.current.fitToElements(options); // also reorients the map to show all of the markers
-    // console.log(placeObjectArray.length);
+    
+    // also reorients the map to show all of the markers
+    resizeMap();
   }
 
   const mapRef = useRef(null);
@@ -108,16 +125,14 @@ export default function MainPage({route, navigation}) {
   const [time, setTime] = useState(0.0);
   const [distance, setDistance] = useState(0.0);
  
-  const baseUrl = "http://192.168.1.194:8081";
+  const baseUrl = "http://10.176.199.107:8081";
 
   
   
   
-  // this function is called to render routes whenever the user presses show routes
+  // this function is called to render routes 
   const handleShowPress = () =>{
     console.log("handling show press", placeObjectArray.length);
-    // const jsonObj = (JSON.stringify(placeObjectArray));
-    // apiTest(placeObjectArray);
     setPathArr([]); // resets the path array in order to clear any routes on the map
     var arr = [];
     // loop prepares a 2d array of lat long vals to request routes between all the markers
@@ -159,15 +174,10 @@ export default function MainPage({route, navigation}) {
                     strokeColor="#559CAD"
                   ></MapViewDirections>)
         }));
-        const options = {
-            edgePadding: EDGE_PADDING,
-            animated: true
-          }
-          mapRef.current.fitToElements(options);
+        resizeMap();
   }
   // this function deletes a specified marker from the map
   const onDeletePress = (index) =>{
-
     setPathArr([]);
     var arr2 = placeObjectArray;
     if (arr2.length<3){
@@ -181,13 +191,9 @@ export default function MainPage({route, navigation}) {
       arr2 = [];
     }
     setPlaceObjectArray([...arr2]);
-    const options = {
-      edgePadding: EDGE_PADDING,
-      animated: true
-    }
-    // makes sure to readjust the map to fit to remaining markers
-    mapRef.current.fitToElements(options);
-  }  
+    resizeMap();
+  } 
+  // API call to save the route 
   const saveRouteAPI = async (objArray)=>{
     var date = moment()
       .utcOffset('-06:00')
@@ -206,31 +212,11 @@ export default function MainPage({route, navigation}) {
 
   const saveRoute = () =>{
     saveRouteAPI(placeObjectArray);
-    Alert.alert('Alert Title', 'My Alert Msg', [
+    Alert.alert('Save Route', 'Route has been saved', [
         {text: 'OK', onPress: () => console.log('OK Pressed')},
       ])
   }
-
-  const fetch = () =>{
-    axios.get(`${baseUrl}/api/getAllRoutes`).then((response) => {
-        console.log(response.data);
-    })
-  }
-  /*
-  Object {
-    "city": "Irving",
-    "country": "United States",
-    "district": "Valley Ranch",
-    "isoCountryCode": "US",
-    "name": "8916 Fox Hollow Trail",
-    "postalCode": "75063",
-    "region": "TX",
-    "street": "Fox Hollow Trail",
-    "streetNumber": "8916",
-    "subregion": "Dallas County",
-    "timezone": "America/Chicago",
-  },
-  */
+  // adds user's current location to the place object array
   const addCurrentLocation = () =>{
     if (location !== null){
         Location.reverseGeocodeAsync({
@@ -247,11 +233,7 @@ export default function MainPage({route, navigation}) {
                 }
               }
             setPlaceObjectArray([...placeObjectArray,locationObject]); // simply adds the location object to the state
-            const options = {
-              edgePadding: EDGE_PADDING,
-              animated: true
-            }
-            mapRef.current.fitToElements(options); 
+            resizeMap(); 
     
         });
         
@@ -328,17 +310,19 @@ export default function MainPage({route, navigation}) {
       width: "100%",
     }}>
         <View style={{display:"flex", flexDirection:"row",justifyContent:"space-evenly", width:"95%", alignSelf:"center"}}>
-        <View style={styles.historyPressableStyle}>
-            <Text style={styles.placesPressableText}> 
-            Time: {Math.round(time)} minutes
-            {/* Time Required: {time} */}
-            </Text>
-            </View>
+
             <View style={styles.historyPressableStyle}>
-            <Text style={styles.placesPressableText}> 
-            Jogged: {Math.round((distance*0.621371) * 100)/100} miles
-            </Text>
+                <Text style={styles.placesPressableText}> 
+                    Time: {Math.round(time)} minutes
+                </Text>
             </View>
+
+            <View style={styles.historyPressableStyle}>
+                <Text style={styles.placesPressableText}> 
+                    Jogged: {Math.round((distance*0.621371) * 100)/100} miles
+                </Text>
+            </View>
+
         </View>
       {location !== null ? // makes sure the map doesn't render until it gets user location
         (<MapView  
@@ -359,7 +343,7 @@ export default function MainPage({route, navigation}) {
         </MapView>) : null}
 		</View>
     <View style={{display:"flex", flexDirection:"row", justifyContent:"space-around"}}>
-    {/* navigation.push('HistoryPage') */}
+    
     <Pressable onPress={()=>navigation.push('HistoryPage') } style={styles.showRoutesPressable}>
         <Text style={styles.placesPressableText}>
 				Show History

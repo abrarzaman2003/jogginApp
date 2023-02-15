@@ -35,6 +35,7 @@ export const styles = StyleSheet.create({
       shadowOffset: {width: 2, height: 3},
       shadowOpacity: 0.4,
       shadowRadius: 2,
+      height: 75,
     },
     placesPressableText: {
       fontSize: 14,
